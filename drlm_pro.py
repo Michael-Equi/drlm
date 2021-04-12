@@ -24,7 +24,8 @@ class DRLMPro:
         self.D = librosa.stft(self.y[0], n_fft=2048)
         self.start = None
 
-        self.generator = generators.RGBGenerator(288, self.D, self.sr)
+        # self.generator = generators.RGBGenerator(288, self.D, self.sr)
+        self.generator = generators.WaveGenerator(288, self.D, self.sr)
         self.controller = ProController(numPixels=NUM_PIXELS)
 
         with window("DRLM Light"):
@@ -60,9 +61,9 @@ class DRLMPro:
         self.controller.set(c)
         self.controller.write()
 
-        for i in range(NUM_PIXELS):
-            R, G, B = util.hexToRGB(c[i])
-            draw_rectangle("Visualization_" + str(i), [0, 0], [20, 20], [0, 0, 0], fill=[R, G, B, 255], thickness=0)
+        # for i in range(NUM_PIXELS):
+        #     R, G, B = util.hexToRGB(c[i])
+        #     draw_rectangle("Visualization_" + str(i), [0, 0], [20, 20], [0, 0, 0], fill=[R, G, B, 255], thickness=0)
 
 
 if __name__ == "__main__":
@@ -70,10 +71,10 @@ if __name__ == "__main__":
     # songName = 'Ministry-Jesus-Built-My-Hotrod'
     # songName = 'JukeboxHero'
     # songName = 'Thunderstruck'
-    # songName = 'OneMoreTime'
+    songName = 'OneMoreTime'
     # songName = 'BornToRun'
     # songName = 'PlugWalk'
-    songName = 'Albatraoz'
+    # songName = 'Albatraoz'
     # songName = 'MajorLazerLightitUpRemix'
     # songName = '2000Hz'
     # songName = '200Hz'

@@ -131,3 +131,5 @@ dmypy.json
 .idea
 *.npy
 *.mp3
+
+.DS_Store

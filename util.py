@@ -64,6 +64,21 @@ def loadSongFromMp3(song: str):
     return y, sr, file
 
 
+def rgbToHex(r, g, b):
+    assert r < 256 and g < 256 and b < 256
+    return r << 16 | g << 8 | b
+
+
+def hexToRGB(v):
+    return (v >> 16) & 0b11111111, (v >> 8) & 0b11111111, v & 0b11111111
+
+
+def clipAndNormalize(s, m=3):
+    s = np.clip(s, 0, np.average(s) * m)
+    n = (s - np.min(s)) / (np.max(s) - np.min(s))
+    return n
+
+
 def timeToBin(time, D, sr):
     return np.argmin(np.abs(getTimes(D, sr) - time))
 

@@ -1,8 +1,5 @@
 import os
-from pathlib import Path
-
 import numpy as np
-import matplotlib.pyplot as plt
 import librosa
 import librosa.display
 
@@ -14,38 +11,27 @@ import threading
 import time
 import util
 
-import serial
+from hw_interfaces import ProController
+import generators
+
+NUM_PIXELS = 288
 
 
-def clipAndNormalize(s, m=3):
-    s = np.clip(s, 0, np.average(s) * m)
-    n = (s - np.min(s)) / (np.max(s) - np.min(s))
-    return n
-
-class Controller:
-
-    def __init__(self, port='/dev/tty.usbmodem143301', baud=115200):
-        self.ser = serial.Serial(port, baud, timeout=0, parity=serial.PARITY_EVEN)
-
-    def send(self, R, G, B):
-        arr = bytearray([int(R), int(G), int(B), 0x0a])
-        self.ser.write(arr)
-
-class DRLMLight:
+class DRLMPro:
 
     def __init__(self, song="JukeboxHero"):
         self.y, self.sr, self.file = util.loadSongFromMp3(song)
         self.D = librosa.stft(self.y[0], n_fft=2048)
         self.start = None
 
-        self.bass = clipAndNormalize(util.accumulateRange(self.D, 60, 250))
-        self.midrange = clipAndNormalize(util.accumulateRange(self.D, 500, 2000))
-        self.presence = clipAndNormalize(util.accumulateRange(self.D, 4000, 6000))
-
-        self.controller = Controller()
+        self.generator = generators.RGBGenerator(288, self.D, self.sr)
+        self.controller = ProController(numPixels=NUM_PIXELS)
 
         with window("DRLM Light"):
-            add_drawing("Visualization", width=400, height=400)
+            for i in range(NUM_PIXELS):
+                if i % 50 != 0:
+                    add_same_line(name="sl" + str(i), spacing=0)
+                add_drawing("Visualization_" + str(i), width=20, height=20)
             add_simple_plot("Frequencies Magnitude", source="freq_data", minscale=0.0, maxscale=np.max(np.abs(self.D)),
                             height=300)
 
@@ -57,7 +43,8 @@ class DRLMLight:
             threading.Thread(target=util.playSong(self.file)).start()
             self.start = time.time()
 
-        i = util.timeToBin(time.time() - self.start, self.D, self.sr)
+        t = time.time() - self.start
+        i = util.timeToBin(t, self.D, self.sr)
 
         """
         Update Graph Data
@@ -69,16 +56,13 @@ class DRLMLight:
         """
         clear_drawing("Visualization")
 
-        # Base
-        R = 255 * self.bass[i]
-        # Midrange
-        G = 255 * self.midrange[i]
-        # Presence
-        B = 255 * self.presence[i]
+        c = self.generator.sample(t)
+        self.controller.set(c)
+        self.controller.write()
 
-        self.controller.send(R, G, B)
-
-        draw_rectangle("Visualization", [0, 0], [200, 200], [0, 0, 0], fill=[R, G, B, 255], thickness=0)
+        for i in range(NUM_PIXELS):
+            R, G, B = util.hexToRGB(c[i])
+            draw_rectangle("Visualization_" + str(i), [0, 0], [20, 20], [0, 0, 0], fill=[R, G, B, 255], thickness=0)
 
 
 if __name__ == "__main__":
@@ -89,9 +73,9 @@ if __name__ == "__main__":
     # songName = 'OneMoreTime'
     # songName = 'BornToRun'
     # songName = 'PlugWalk'
-    # songName = 'Albatraoz'
-    songName = 'MajorLazerLightitUpRemix'
+    songName = 'Albatraoz'
+    # songName = 'MajorLazerLightitUpRemix'
     # songName = '2000Hz'
     # songName = '200Hz'
-    #
-    drlm = DRLMLight(songName)
+
+    drlm = DRLMPro(os.path.join('music', songName))

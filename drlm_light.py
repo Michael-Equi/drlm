@@ -14,22 +14,13 @@ import threading
 import time
 import util
 
-import serial
+from hw_interfaces import Controller
 
 
 def clipAndNormalize(s, m=3):
     s = np.clip(s, 0, np.average(s) * m)
     n = (s - np.min(s)) / (np.max(s) - np.min(s))
     return n
-
-class Controller:
-
-    def __init__(self, port='/dev/tty.usbmodem143301', baud=115200):
-        self.ser = serial.Serial(port, baud, timeout=0, parity=serial.PARITY_EVEN)
-
-    def send(self, R, G, B):
-        arr = bytearray([int(R), int(G), int(B), 0x0a])
-        self.ser.write(arr)
 
 class DRLMLight:
 

@@ -2,6 +2,7 @@ from pathlib import Path
 from pygame import mixer
 import librosa
 import numpy as np
+import os
 
 
 def binToFreq(n: int, sampleFreq: int = 22050, nBins: int = 2048):
@@ -46,11 +47,21 @@ def freqsByMagnitude(D: np.ndarray):
     return maxFreqs
 
 
-def loadSongFromMp3(song: str):
-    song_y_npy = Path(song + "_y.npy")
-    song_sr_npy = Path(song + "_sr.npy")
-    song_mp3 = Path(song + ".mp3")
-    file = song_mp3
+def listSongs(path: Path = Path(os.path.dirname(__file__), "music")):
+    return [f.name for f in path.iterdir() if ".mp3" in f.name]
+
+
+def loadSongFromMp3(song: str, path: Path = Path(os.path.dirname(__file__), "music")):
+    songPath = path.joinpath(song)
+    song_mp3 = Path(str(songPath) + ".mp3")
+
+    if not song_mp3.exists():
+        print(song, "mp3 not found")
+        print("mp3 files in", path, "are", listSongs(path))
+        raise FileNotFoundError
+
+    song_y_npy = Path(str(songPath) + "_y.npy")
+    song_sr_npy = Path(str(songPath) + "_sr.npy")
 
     y, sr = None, None
     if song_y_npy.exists() and song_sr_npy.exists():
@@ -61,7 +72,7 @@ def loadSongFromMp3(song: str):
         np.save(song_y_npy, y)
         np.save(song_sr_npy, sr)
 
-    return y, sr, file
+    return y, sr, song_mp3
 
 
 def rgbToHex(r, g, b):

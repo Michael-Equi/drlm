@@ -46,9 +46,6 @@ class RGBGenerator(Generator):
         return arr
 
 
-import sys
-
-
 class WaveGenerator(Generator):
     def __init__(self, numPixels, D, sr):
         super(WaveGenerator, self).__init__(numPixels, D, sr)

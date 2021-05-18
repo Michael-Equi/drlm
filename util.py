@@ -98,3 +98,4 @@ def playSong(file: Path):
     mixer.init()
     mixer.music.load(str(file))
     mixer.music.play()
+    return mixer

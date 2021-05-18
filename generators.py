@@ -63,14 +63,33 @@ class WaveGenerator(Generator):
         for i in range(self.numPixels):
             self.cmap[i] = util.rgbToHex(int(255 * R[i]), int(255 * G[i]), int(255 * B[i]))
 
-    def sample(self, t, center=144):
-        i = util.timeToBin(t, self.D, self.sr)
+        self.smoothing = 10
+        self.maxBin = 600
 
-        smoothing = 100
-        s = np.abs(self.D[:, i])[:800]
+        avgs = np.average(np.abs(self.D), axis=1)[:self.maxBin]
+        stds = np.std(np.abs(self.D), axis=1)[:self.maxBin]
 
         # filter sample
-        fs = np.convolve(s, np.ones(smoothing) / smoothing, mode='same')
+        fAvgs = np.convolve(avgs, np.ones(self.smoothing) / self.smoothing, mode='same')
+        fStds = np.convolve(stds, np.ones(self.smoothing) / self.smoothing, mode='same')
+
+        # subsample and crop
+        fss = fAvgs[::int(np.floor(avgs.shape[0] / self.numPixels))]
+        crop = int((fss.shape[0] - self.numPixels) / 2)
+        self.cfssAvgs = fss[crop:-crop]
+
+        fss = fStds[::int(np.floor(stds.shape[0] / self.numPixels))]
+        crop = int((fss.shape[0] - self.numPixels) / 2)
+        self.cfssStds = fss[crop:-crop]
+
+    def sample(self, t, center=144):
+
+        i = util.timeToBin(t, self.D, self.sr)
+        s = np.abs(self.D[:, i])[:self.maxBin]
+        s = np.where(s < 0.1, 0, s)  # remove baseline noise
+
+        # filter sample
+        fs = np.convolve(s, np.ones(self.smoothing) / self.smoothing, mode='same')
 
         # subsample and crop
         fss = fs[::int(np.floor(s.shape[0] / self.numPixels))]
@@ -78,7 +97,8 @@ class WaveGenerator(Generator):
         cfss = fss[crop:-crop]
 
         # normalize
-        ncfss = ((cfss - np.min(cfss)) / (np.max(cfss) - np.min(cfss)))**3
+        # ncfss = ((cfss - np.min(cfss)) / (np.max(cfss) - np.min(cfss))) ** 3
+        ncfss = np.clip(cfss / (self.cfssAvgs + 5 * self.cfssStds), 0, 1)
 
         arr = np.zeros(self.numPixels, dtype=np.int32)
         for i in range(arr.size):

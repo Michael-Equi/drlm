@@ -2,6 +2,9 @@ import os
 import time
 import serial.tools.list_ports
 import numpy as np
+from pydantic import BaseModel, Field
+import threading
+from queue import Queue
 
 from hw_interfaces import ProController
 import util
@@ -9,7 +12,12 @@ import util
 NUM_PIXELS = 288
 
 
-def sunClock(controller: ProController):
+class ProcessMessage(BaseModel):
+    stop: bool = Field(default=False)
+    data: dict = Field(default={})
+
+
+def sunClock(controller: ProController, queue: Queue):
     import datetime
     from suntime import Sun
 
@@ -55,7 +63,7 @@ def sunClock(controller: ProController):
         time.sleep(0.1)
 
 
-def oceanWave(controller: ProController):
+def oceanWave(controller: ProController, queue: Queue):
     import time
     peak = np.array([0, 150, 180])
     valley = np.array([0, 0, 20])
@@ -76,12 +84,37 @@ def oceanWave(controller: ProController):
         time.sleep(0.01)
 
 
-def listSongs(controller: ProController):
+def rainbow(controller: ProController, queue: Queue, speed: str):
+    import time
+    # generate cmap
+    numSegments = 3
+    segLength = int(controller.numPixels / numSegments)
+    decreasing = -np.arange(-1, 0, 1 / segLength)
+    increasing = np.arange(0, 1, 1 / segLength)
+    zero = np.zeros(segLength)
+    R = np.hstack((decreasing, zero, increasing))
+    G = np.hstack((increasing, decreasing, zero))
+    B = np.hstack((zero, increasing, decreasing))
+    cmap = np.zeros(controller.numPixels, dtype=np.int32)
+    for i in range(controller.numPixels):
+        cmap[i] = util.rgbToHex(int(255 * R[i]), int(255 * G[i]), int(255 * B[i]))
+
+    lastMessage = ProcessMessage()
+    while not lastMessage.stop:
+        if not queue.empty():
+            lastMessage = queue.get_nowait()
+        cmap = np.roll(cmap, 1)
+        controller.set(cmap)
+        controller.write()
+        time.sleep(1/int(speed))
+    return True
+
+
+def listSongs(controller: ProController, queue: Queue):
     print(util.listSongs())
 
 
-def playSong(controller: ProController, songName: str, generatorName: str):
-    import threading
+def playSong(controller: ProController, queue: Queue, songName: str, generatorName: str):
     import generators
     import librosa
 
@@ -105,13 +138,17 @@ def playSong(controller: ProController, songName: str, generatorName: str):
 
     print("Playing:", songName)
 
-    threading.Thread(target=util.playSong(file)).start()
-    time.sleep(0.4)
+    mixer = util.playSong(file)
+    time.sleep(0.2)
 
     start = time.time()
     songDuration = util.getTimes(D, sr)[-1]
 
-    while time.time() - start < songDuration + 5:
+    lastMessage = ProcessMessage()
+    while time.time() - start < songDuration + 1 and not lastMessage.stop:
+        if not queue.empty():
+            lastMessage = queue.get_nowait()
+
         t = time.time() - start
         i = util.timeToBin(t, D, sr)
 
@@ -121,11 +158,15 @@ def playSong(controller: ProController, songName: str, generatorName: str):
 
         time.sleep(0.01)
 
-    print("Song finished")
+    if lastMessage.stop:
+        mixer.music.stop()
+        print("Song stopped")
+    else:
+        print("Song finished")
     return True
 
 
-def setColor(controller: ProController, R: int, G: int, B: int):
+def setColor(controller: ProController, queue: Queue, R: int, G: int, B: int):
     R = int(R)
     G = int(G)
     B = int(B)
@@ -136,7 +177,7 @@ def setColor(controller: ProController, R: int, G: int, B: int):
         controller.write()
 
 
-def clear(controller: ProController):
+def clear(controller: ProController, queue: Queue):
     controller.clear()
     controller.write()
 
@@ -146,6 +187,7 @@ commands = {
     "clear": clear,
     "sunClock": sunClock,
     "oceanWave": oceanWave,
+    "rainbow": rainbow,
     "playSong": playSong,
     "listSongs": listSongs,
 }
@@ -168,15 +210,45 @@ def main():
             print(e)
 
     controller = ProController(NUM_PIXELS, os.path.join("/dev", ports[portNum].name))
-    end = False
-    while not end:
-        cmd = input(">>> ").split(" ")
-        if cmd[0] == "exit" or cmd[0] == "end":
-            end = True
 
+    class DrlmProcess:
+        pass
+
+    currProcess = None
+    currProcessQueue = None
+
+    end = False
+    # threads are keys and values are queues for each thread
+    while not end:
+        cmd = input(">>> ").strip().split(" ")
+
+        if cmd == ['']:
+            continue
+
+        # Check if process is still alive, if it is not forget about it
+        if currProcess is not None and not currProcess.is_alive():
+            currProcess = None
+            currProcessQueue = None
+
+        # Process commands
+        if cmd[0] == "exit":
+            end = True
+        elif cmd[0] == "stop":
+            if currProcess is not None:
+                stopMessage = ProcessMessage(stop=True)
+                currProcessQueue.put(stopMessage)
+                currProcess.join()
+            else:
+                print("No processes to stop")
         elif cmd[0] in commands.keys():
             try:
-                commands[cmd[0]](controller, *cmd[1:])
+                if currProcess is None:
+                    q = Queue()
+                    currProcess = threading.Thread(target=commands[cmd[0]], args=(controller, q, *cmd[1:]))
+                    currProcessQueue = q
+                    currProcess.start()
+                else:
+                    print("A process is currently running, please stop the current process before starting a new one")
             except Exception as e:
                 print(e)
         else:

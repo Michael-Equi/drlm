@@ -71,12 +71,12 @@ if __name__ == "__main__":
     # songName = 'Ministry-Jesus-Built-My-Hotrod'
     # songName = 'JukeboxHero'
     # songName = 'Thunderstruck'
-    songName = 'OneMoreTime'
+    # songName = 'OneMoreTime'`
     # songName = 'BornToRun'
     # songName = 'PlugWalk'
     # songName = 'Albatraoz'
     # songName = 'MajorLazerLightitUpRemix'
-    # songName = '2000Hz'
+    songName = '2000Hz'
     # songName = '200Hz'
 
-    drlm = DRLMPro(os.path.join('music', songName))
+    drlm = DRLMPro(songName)

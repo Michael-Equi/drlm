@@ -1,23 +1,13 @@
-import serial
 import numpy as np
+import serial
 import threading
 
 
 class Controller:
 
-    def __init__(self, port='/dev/tty.usbmodem143301', baud=115200):
-        self.ser = serial.Serial(port, baud, timeout=0, parity=serial.PARITY_EVEN)
-
-    def send(self, R, G, B):
-        arr = bytearray([int(R), int(G), int(B), 0x0a])
-        self.ser.write(arr)
-
-
-class ProController:
-
-    def __init__(self, numPixels=288, port='/dev/cu.usbmodem86998501', baud=115200):
-        self.numPixels = numPixels
-        self.bytes = bytearray(numPixels * 3 + 1)
+    def __init__(self, port, num_pixels=288, baud=115200):
+        self.numPixels = num_pixels
+        self.bytes = bytearray(num_pixels * 3 + 1)
         self.ser = serial.Serial(port, baud, timeout=0, parity=serial.PARITY_EVEN)
         self.lock = threading.Lock()
 
@@ -29,7 +19,7 @@ class ProController:
             self.bytes[-1] = parity
             self.ser.write(self.bytes)
 
-    def setPixel(self, i, r, g, b):
+    def set_pixel(self, i, r, g, b):
         assert i < self.numPixels
         assert r < 256 and g < 256 and b < 256
         with self.lock:

@@ -77,7 +77,7 @@ def oceanWave(controller: ProController, queue: Queue):
         fp = (1 - 1 / 2 * a * f[:controller.numPixels])
         for i, p in enumerate(fp):
             color = np.clip(p ** 2 * peak + (1 - p) ** 2 * valley, 0, 255)
-            controller.setPixel(i, int(color[0]), int(color[1]), int(color[2]))
+            controller.set_pixel(i, int(color[0]), int(color[1]), int(color[2]))
 
         controller.write()
         f = np.roll(f, 1)
@@ -173,7 +173,7 @@ def setColor(controller: ProController, queue: Queue, R: int, G: int, B: int):
     if 0 <= R <= 255 and 0 <= G <= 255 and 0 <= B <= 255:
         print("Setting color: (" + str(R), str(G), str(B) + ")")
         for i in range(controller.numPixels):
-            controller.setPixel(i, R, G, B)
+            controller.set_pixel(i, R, G, B)
         controller.write()
 
 

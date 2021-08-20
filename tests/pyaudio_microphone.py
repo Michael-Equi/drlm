@@ -21,7 +21,7 @@ WAVE_OUTPUT_FILENAME = "file.wav"
 
 audio = pyaudio.PyAudio()
 
-y, sr, file = util.loadSongFromMp3("JukeBoxHero")
+y, sr, file = util.load_song_from_mp3("JukeBoxHero")
 mixer.init()
 mixer.music.load(str(file))
 mixer.music.play()

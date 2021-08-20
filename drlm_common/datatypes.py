@@ -1,6 +1,6 @@
 import numpy as np
 
-from drlm_common.util import rgb_to_hex, hex_to_rgb
+from drlm_common.utils import hex_to_rgb, rgb_to_hex
 
 
 class Color:
@@ -42,7 +42,7 @@ class LedStrip:
     def set_led(self, i, color: Color):
         self.arr[i] = color.get_hex()
 
-    def set_strip(self, arr: np.ndarray):
+    def set(self, arr: np.ndarray):
         assert self.arr.shape == arr.shape
         self.arr = arr
 

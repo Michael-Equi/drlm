@@ -43,8 +43,8 @@ class DemoApp(DrlmApp):
         for i in range(len(self.strip)):
             self.strip.set_led(i, Color.from_rgb(255, 0, 0))
             self.write()
-            time.sleep(0.01)
+            time.sleep(0.1)
         for i in range(len(self.strip)):
             self.strip.set_led(i, Color.from_rgb(0, 0, 0))
             self.write()
-            time.sleep(0.01)
+            time.sleep(0.1)

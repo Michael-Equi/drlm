@@ -25,13 +25,13 @@ def clipAndNormalize(s, m=3):
 class DRLMLight:
 
     def __init__(self, song="JukeboxHero"):
-        self.y, self.sr, self.file = util.loadSongFromMp3(song)
+        self.y, self.sr, self.file = util.load_song_from_mp3(song)
         self.D = librosa.stft(self.y[0], n_fft=2048)
         self.start = None
 
-        self.bass = clipAndNormalize(util.accumulateRange(self.D, 60, 250))
-        self.midrange = clipAndNormalize(util.accumulateRange(self.D, 500, 2000))
-        self.presence = clipAndNormalize(util.accumulateRange(self.D, 4000, 6000))
+        self.bass = clipAndNormalize(util.accumulate_range(self.D, 60, 250))
+        self.midrange = clipAndNormalize(util.accumulate_range(self.D, 500, 2000))
+        self.presence = clipAndNormalize(util.accumulate_range(self.D, 4000, 6000))
 
         self.controller = Controller()
 
@@ -45,10 +45,10 @@ class DRLMLight:
 
     def onRender(self):
         if not self.start:
-            threading.Thread(target=util.playSong(self.file)).start()
+            threading.Thread(target=util.play_song(self.file)).start()
             self.start = time.time()
 
-        i = util.timeToBin(time.time() - self.start, self.D, self.sr)
+        i = util.time_to_bin(time.time() - self.start, self.D, self.sr)
 
         """
         Update Graph Data

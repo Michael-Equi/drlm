@@ -62,10 +62,10 @@ class DrlmSimController(DrlmController):
 
     def set(self, arr: np.ndarray):
         assert len(self.strip) == len(arr)
-        self.strip.set_strip(arr)
+        self.strip.set(arr)
 
     def clear(self):
-        self.strip.set_strip(np.zeros(len(self.strip), dtype=np.int32))
+        self.strip.set(np.zeros(len(self.strip), dtype=np.int32))
 
 
 class DrlmHardwareController(DrlmController):

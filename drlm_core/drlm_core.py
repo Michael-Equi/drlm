@@ -14,7 +14,7 @@ class DrlmCoreConfig:
     port: int = 5555
     header_length: int = 10
     num_leds: int = 288
-    buffer_size: int = 65536
+    buffer_size: int = 4096
 
 
 class DrlmCore:

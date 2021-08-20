@@ -20,7 +20,7 @@ NUM_PIXELS = 288
 class DRLMPro:
 
     def __init__(self, song="JukeboxHero"):
-        self.y, self.sr, self.file = util.loadSongFromMp3(song)
+        self.y, self.sr, self.file = util.load_song_from_mp3(song)
         self.D = librosa.stft(self.y[0], n_fft=2048)
         self.start = None
 
@@ -41,11 +41,11 @@ class DRLMPro:
 
     def onRender(self):
         if not self.start:
-            threading.Thread(target=util.playSong(self.file)).start()
+            threading.Thread(target=util.play_song(self.file)).start()
             self.start = time.time()
 
         t = time.time() - self.start
-        i = util.timeToBin(t, self.D, self.sr)
+        i = util.time_to_bin(t, self.D, self.sr)
 
         """
         Update Graph Data

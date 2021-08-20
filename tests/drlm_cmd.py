@@ -111,7 +111,7 @@ def rainbow(controller: ProController, queue: Queue, speed: str):
 
 
 def listSongs(controller: ProController, queue: Queue):
-    print(util.listSongs())
+    print(util.list_songs())
 
 
 def playSong(controller: ProController, queue: Queue, songName: str, generatorName: str):
@@ -120,7 +120,7 @@ def playSong(controller: ProController, queue: Queue, songName: str, generatorNa
 
     D, y, sr, file = None, None, None, None
     try:
-        y, sr, file = util.loadSongFromMp3(songName)
+        y, sr, file = util.load_song_from_mp3(songName)
         D = librosa.stft(y[0], n_fft=2048)
     except Exception as e:
         print(e)
@@ -138,11 +138,11 @@ def playSong(controller: ProController, queue: Queue, songName: str, generatorNa
 
     print("Playing:", songName)
 
-    mixer = util.playSong(file)
+    mixer = util.play_song(file)
     time.sleep(0.2)
 
     start = time.time()
-    songDuration = util.getTimes(D, sr)[-1]
+    songDuration = util.get_times(D, sr)[-1]
 
     lastMessage = ProcessMessage()
     while time.time() - start < songDuration + 1 and not lastMessage.stop:
@@ -150,7 +150,7 @@ def playSong(controller: ProController, queue: Queue, songName: str, generatorNa
             lastMessage = queue.get_nowait()
 
         t = time.time() - start
-        i = util.timeToBin(t, D, sr)
+        i = util.time_to_bin(t, D, sr)
 
         c = generator.sample(t)
         controller.set(c)

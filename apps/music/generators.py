@@ -1,6 +1,9 @@
 import abc
+
 import numpy as np
-import util
+
+import utils
+from drlm_common.datatypes import Color
 
 
 class Generator(abc.ABC):
@@ -22,15 +25,15 @@ class Generator(abc.ABC):
 
 
 class RGBGenerator(Generator):
-    def __init__(self, numPixels, D, sr, curve=3):
-        super(RGBGenerator, self).__init__(numPixels, D, sr)
+    def __init__(self, num_leds, D, sr, curve=3):
+        super(RGBGenerator, self).__init__(num_leds, D, sr)
         self.curve = curve
-        self.bass = util.clip_and_normalize(util.accumulate_range(self.D, 60, 250))
-        self.midrange = util.clip_and_normalize(util.accumulate_range(self.D, 500, 2000))
-        self.presence = util.clip_and_normalize(util.accumulate_range(self.D, 4000, 6000))
+        self.bass = utils.clip_and_normalize(utils.accumulate_range(self.D, 60, 250))
+        self.midrange = utils.clip_and_normalize(utils.accumulate_range(self.D, 500, 2000))
+        self.presence = utils.clip_and_normalize(utils.accumulate_range(self.D, 4000, 6000))
 
     def sample(self, t):
-        i = util.time_to_bin(t, self.D, self.sr)
+        i = utils.time_to_bin(t, self.D, self.sr)
         # Base
         R = int(255 * self.bass[i] ** self.curve)
         # Midrange
@@ -38,7 +41,7 @@ class RGBGenerator(Generator):
         # Presence
         B = int(255 * self.presence[i] ** self.curve)
 
-        v = util.rgb_to_hex(R, G, B)
+        v = Color.from_rgb(R, G, B).get_hex()
         arr = np.zeros(self.numPixels, dtype=np.int32)
         for i in range(arr.size):
             arr[i] = v
@@ -61,7 +64,7 @@ class WaveGenerator(Generator):
         B = np.hstack((zero, increasing))
         self.cmap = np.zeros(self.numPixels, dtype=np.int32)
         for i in range(self.numPixels):
-            self.cmap[i] = util.rgb_to_hex(int(255 * R[i]), int(255 * G[i]), int(255 * B[i]))
+            self.cmap[i] = Color.from_rgb(int(255 * R[i]), int(255 * G[i]), int(255 * B[i])).get_hex()
 
         self.smoothing = 10
         self.maxBin = 600
@@ -84,7 +87,7 @@ class WaveGenerator(Generator):
 
     def sample(self, t, center=144):
 
-        i = util.time_to_bin(t, self.D, self.sr)
+        i = utils.time_to_bin(t, self.D, self.sr)
         s = np.abs(self.D[:, i])[:self.maxBin]
         s = np.where(s < 0.1, 0, s)  # remove baseline noise
 
@@ -102,10 +105,10 @@ class WaveGenerator(Generator):
 
         arr = np.zeros(self.numPixels, dtype=np.int32)
         for i in range(arr.size):
-            R, G, B = util.hex_to_rgb(self.cmap[i])
+            R, G, B = Color(self.cmap[i]).get_rgb()
             if np.isnan(ncfss[i]):
                 arr[i] = 0
             else:
-                arr[i] = util.rgb_to_hex(int(ncfss[i] * R), int(ncfss[i] * G), int(ncfss[i] * B))
+                arr[i] = Color.from_rgb(int(ncfss[i] * R), int(ncfss[i] * G), int(ncfss[i] * B)).get_hex()
 
         return arr

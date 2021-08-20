@@ -97,7 +97,7 @@ def rainbow(controller: ProController, queue: Queue, speed: str):
     B = np.hstack((zero, increasing, decreasing))
     cmap = np.zeros(controller.numPixels, dtype=np.int32)
     for i in range(controller.numPixels):
-        cmap[i] = util.rgbToHex(int(255 * R[i]), int(255 * G[i]), int(255 * B[i]))
+        cmap[i] = util.rgb_to_hex(int(255 * R[i]), int(255 * G[i]), int(255 * B[i]))
 
     lastMessage = ProcessMessage()
     while not lastMessage.stop:

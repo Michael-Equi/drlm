@@ -38,7 +38,7 @@ class RGBGenerator(Generator):
         # Presence
         B = int(255 * self.presence[i] ** self.curve)
 
-        v = util.rgbToHex(R, G, B)
+        v = util.rgb_to_hex(R, G, B)
         arr = np.zeros(self.numPixels, dtype=np.int32)
         for i in range(arr.size):
             arr[i] = v
@@ -61,7 +61,7 @@ class WaveGenerator(Generator):
         B = np.hstack((zero, increasing))
         self.cmap = np.zeros(self.numPixels, dtype=np.int32)
         for i in range(self.numPixels):
-            self.cmap[i] = util.rgbToHex(int(255 * R[i]), int(255 * G[i]), int(255 * B[i]))
+            self.cmap[i] = util.rgb_to_hex(int(255 * R[i]), int(255 * G[i]), int(255 * B[i]))
 
         self.smoothing = 10
         self.maxBin = 600
@@ -102,10 +102,10 @@ class WaveGenerator(Generator):
 
         arr = np.zeros(self.numPixels, dtype=np.int32)
         for i in range(arr.size):
-            R, G, B = util.hexToRGB(self.cmap[i])
+            R, G, B = util.hex_to_rgb(self.cmap[i])
             if np.isnan(ncfss[i]):
                 arr[i] = 0
             else:
-                arr[i] = util.rgbToHex(int(ncfss[i] * R), int(ncfss[i] * G), int(ncfss[i] * B))
+                arr[i] = util.rgb_to_hex(int(ncfss[i] * R), int(ncfss[i] * G), int(ncfss[i] * B))
 
         return arr

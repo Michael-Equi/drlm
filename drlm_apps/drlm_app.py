@@ -1,0 +1,50 @@
+import json
+import socket
+import time
+from abc import ABC, abstractmethod
+
+from drlm_common.datatypes import Color, LedStrip
+
+
+class DrlmApp(ABC):
+
+    def __init__(self, host: str = 'localhost', port: int = 5555):
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            self.s.connect((host, port))
+        except ConnectionRefusedError:
+            print("Connection refused to", host, 'on port', port, '. Make sure DRLM Core is running.')
+            quit()
+
+        cfg = json.loads(self.s.recv(2048))
+        self.num_leds = cfg['num_leds']
+        self.header_length = cfg['header_length']
+
+        self.strip = LedStrip(self.num_leds)
+
+    def create_packet(self, data: bytes) -> bytes:
+        header = bytes(f'{len(data):<{self.header_length}}', 'utf-8')
+        return header + data
+
+    def write(self):
+        self.s.send(self.create_packet(self.strip.bytes()))
+
+    def close(self):
+        self.s.shutdown(socket.SHUT_RDWR)
+        self.s.close()
+
+    @abstractmethod
+    def run(self):
+        pass
+
+
+class DemoApp(DrlmApp):
+    def run(self):
+        for i in range(len(self.strip)):
+            self.strip.set_led(i, Color.from_rgb(255, 0, 0))
+            self.write()
+            time.sleep(0.01)
+        for i in range(len(self.strip)):
+            self.strip.set_led(i, Color.from_rgb(0, 0, 0))
+            self.write()
+            time.sleep(0.01)

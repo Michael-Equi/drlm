@@ -1,5 +1,6 @@
 import json
 import socket
+import time
 from dataclasses import dataclass
 from typing import Optional
 
@@ -13,7 +14,7 @@ class DrlmCoreConfig:
     host: str = 'localhost'
     port: int = 5555
     header_length: int = 10
-    num_leds: int = 288
+    num_leds: int = 2736
     buffer_size: int = 4096
 
 
@@ -32,6 +33,19 @@ class DrlmCore:
         self.connection: Optional[socket.socket] = None
 
         self.controller = controller
+        self.controller.write()
+
+        # Estimate the max update rate
+        n_samples = 50
+        margin = 0.3
+        s = time.time()
+        for _ in range(n_samples):
+            self.controller.write()
+        t = (time.time() - s) / n_samples
+        self.max_rate = (1 - margin) * (1 / t)
+
+        print('Starting DRLM Core on', self.config.host, 'with port', self.config.port)
+        print(f'Max update rate: {self.max_rate:0.2f}Hz')
 
     def _create_packet(self, data: bytes) -> bytes:
         header = bytes(f'{len(data):<{self.config.header_length}}', 'utf-8')
@@ -39,7 +53,9 @@ class DrlmCore:
 
     def _send_config(self):
         assert self.connection is not None
-        config = bytes(json.dumps({"num_leds": self.config.num_leds, "header_length": self.config.header_length}),
+        config = bytes(json.dumps({"num_leds": self.config.num_leds,
+                                   "header_length": self.config.header_length,
+                                   "max_rate": self.max_rate}),
                        'utf-8')
         self.connection.send(config)
 
@@ -52,7 +68,6 @@ class DrlmCore:
             self.connection.close()
 
     def run(self):
-        print('Starting DRLM Core on', self.config.host, 'with port', self.config.port)
         try:
             while True:
                 self.connection, address = self.socket.accept()
@@ -64,6 +79,8 @@ class DrlmCore:
                     data += self.connection.recv(self.config.buffer_size)
                     if data == bytes('', 'utf-8'):
                         self.connection = None
+                        self.controller.clear()
+                        self.controller.write()
                         print('Connection from', address, 'closed')
                     else:
                         if data_len is None and len(data) >= self.config.header_length:
@@ -79,7 +96,7 @@ class DrlmCore:
 
 
 if __name__ == "__main__":
-    controller = DrlmSimController()
+    controller = DrlmSimController(num_leds=2736)
     cfg = DrlmCoreConfig()
     drlm_core = DrlmCore(controller, cfg)
     drlm_core.run()

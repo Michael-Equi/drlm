@@ -69,7 +69,7 @@ def load_song_from_mp3(song: str, path: Path = Path(os.path.dirname(__file__), "
         y = np.load(song_y_npy)
         sr = np.load(song_sr_npy)
     else:
-        y, sr = librosa.load(song_mp3, mono=False)
+        y, sr = librosa.load(str(song_mp3), mono=False)
         np.save(song_y_npy, y)
         np.save(song_sr_npy, sr)
 

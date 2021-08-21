@@ -12,7 +12,9 @@ class SolidColor(DrlmApp):
     def run(self):
         for i in range(self.num_leds):
             self.strip.set_led(i, self.color)
-        self.write()
+        while True:
+            self.write()
+            time.sleep(10)
 
 
 if __name__ == "__main__":

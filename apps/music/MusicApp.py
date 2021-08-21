@@ -1,24 +1,25 @@
 import time
 
-import librosa
-
 import generators
+import librosa
 import utils
+
 from drlm_app.drlm_app import DrlmApp
 
 
 class MusicApp(DrlmApp):
-    def __init__(self, speed=1000, host: str = 'localhost', port: int = 5555):
+    def __init__(self, speed=10000, offset=0.2, host: str = 'localhost', port: int = 5555):
         super().__init__(host, port)
         self.speed = speed
+        self.offset = offset
 
     def run(self):
 
         # song_name = input("Enter song name")
         # generator_name = input("Enter generator name")
 
-        song_name = "ABBA"
-        generator_name = "RGBGenerator"
+        song_name = "SuperTrouper"
+        generator_name = "PulseGenerator"
 
         D, y, sr, file = None, None, None, None
         try:
@@ -30,7 +31,8 @@ class MusicApp(DrlmApp):
 
         g = {
             "RGBGenerator": generators.RGBGenerator,
-            "WaveGenerator": generators.WaveGenerator
+            "WaveGenerator": generators.WaveGenerator,
+            "PulseGenerator": generators.PulseGenerator
         }
 
         if generator_name not in g.keys():
@@ -40,21 +42,20 @@ class MusicApp(DrlmApp):
 
         print("Playing:", song_name)
 
-        mixer = utils.play_song(file)
-        time.sleep(0.2)
+        utils.play_song(file)
+        time.sleep(self.offset)
 
         start = time.time()
         song_duration = utils.get_times(D, sr)[-1]
 
         while time.time() - start < song_duration + 1:
             t = time.time() - start
-            i = utils.time_to_bin(t, D, sr)
 
             c = generator.sample(t)
             self.strip.set(c)
             self.write()
 
-            time.sleep(0.01)
+            time.sleep(1/self.speed)
 
         print('Song Finished')
         return True

@@ -19,15 +19,23 @@ class DrlmApp(ABC):
         cfg = json.loads(self.s.recv(2048))
         self.num_leds = cfg['num_leds']
         self.header_length = cfg['header_length']
+        self.max_rate = cfg['max_rate']
 
         self.strip = LedStrip(self.num_leds)
+
+        self.last_write = 0
 
     def create_packet(self, data: bytes) -> bytes:
         header = bytes(f'{len(data):<{self.header_length}}', 'utf-8')
         return header + data
 
-    def write(self):
-        self.s.send(self.create_packet(self.strip.bytes()))
+    def write(self) -> bool:
+        # Rate limit
+        if time.time() - self.last_write > 1 / self.max_rate:
+            self.s.send(self.create_packet(self.strip.bytes()))
+            self.last_write = time.time()
+            return True
+        return False
 
     def close(self):
         self.s.shutdown(socket.SHUT_RDWR)

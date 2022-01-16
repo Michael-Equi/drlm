@@ -39,6 +39,18 @@ class LightCommander:
         b = min(255, int(1 * brightness))
         return self._startMP(SolidColor(Color.from_rgb(r, g, b), [(150, 250)]))
 
+    def _runStripLighting(self, args):
+        # args are r g b start1 end1 start2 end2 start3 end3  ...
+        r = min(255, int(args[0]))
+        g = min(255, int(args[1]))
+        b = min(255, int(args[2]))
+        if len(args) == 3:
+            ranges = []
+        else:
+            rgs = args[3:]
+            ranges = [(int(rgs[2*i]), int(rgs[2*i + 1])) for i in  range(len(rgs) // 2)]
+        return self._startMP(SolidColor(Color.from_rgb(r, g, b), ranges))
+
     """
     Handle message function is the primary interface used by external
     applications
@@ -48,6 +60,7 @@ class LightCommander:
             status = False
             args = msg.lower().split(" ")
             cmds = {"reading-light": self._runReadingLight,
+                    "strip-light": self._runStripLighting,
                     "kill": lambda _: self._stopMP()}
             if args[0] == "ls":
                 return f"Available commands: {list(cmds.keys())}\n"
@@ -61,6 +74,10 @@ def main():
     lc = LightCommander()
     print(lc.handleMessage("ls"))
     print(lc.handleMessage("reading-light"))
+    time.sleep(5)
+    print(lc.handleMessage("kill"))
+    time.sleep(5)
+    print(lc.handleMessage("strip-light 155 32 189 10 20 70 80 250 300"))
     time.sleep(5)
     print(lc.handleMessage("kill"))
 

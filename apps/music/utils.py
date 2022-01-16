@@ -66,9 +66,11 @@ def load_song_from_mp3(song: str, path: Path = Path(os.path.dirname(__file__), "
 
     y, sr = None, None
     if song_y_npy.exists() and song_sr_npy.exists():
+        print("file exist")
         y = np.load(song_y_npy)
         sr = np.load(song_sr_npy)
     else:
+        print("Not happy")
         y, sr = librosa.load(str(song_mp3), mono=False)
         np.save(song_y_npy, y)
         np.save(song_sr_npy, sr)

@@ -6,7 +6,7 @@ from typing import Optional
 
 import numpy as np
 
-from drlm_controllers.drlm_controller import DrlmController, DrlmHardwareController
+from drlm_controllers.drlm_controller import DrlmController, DrlmSimController, DrlmHardwareController
 
 
 @dataclass
@@ -96,7 +96,8 @@ class DrlmCore:
 
 
 if __name__ == "__main__":
-    controller = DrlmHardwareController(port='/dev/cu.usbmodem86998501', num_leds=576)
+    # controller = DrlmHardwareController(port='/dev/cu.usbmodem86998501', num_leds=576)
+    controller = DrlmSimController(num_leds=576)
     cfg = DrlmCoreConfig()
     drlm_core = DrlmCore(controller, cfg)
     drlm_core.run()

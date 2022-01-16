@@ -1,7 +1,7 @@
 import abc
 
 import numpy as np
-import utils
+import apps.music.utils as utils
 
 from drlm_common.datatypes import Color
 

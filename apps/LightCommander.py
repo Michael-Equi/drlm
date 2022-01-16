@@ -1,9 +1,17 @@
+from __future__ import unicode_literals
 import time
 import multiprocessing as mp
+import youtube_dl
+import os
+import re
 
 from drlm_common.datatypes import Color
 from SolidColorApp import SolidColor
 from music.MusicApp import MusicApp
+
+# Helper function for making every string in a list lower case
+def lowerArgs(args):
+    return [arg.lower() for arg in args]
 
 class LightCommander:
 
@@ -53,6 +61,8 @@ class LightCommander:
         return self._startMP(SolidColor(Color.from_rgb(r, g, b), ranges))
 
     def _runMusic(self, args):
+        # Make everything lower case so it is not case sensitive
+        args = lowerArgs(args)
         app = MusicApp()
         # Need to map lower case song and generator names to actual names
         songs = app.getSongNames()
@@ -81,6 +91,37 @@ class LightCommander:
         app = MusicApp()
         return app.getGeneratorNames()
 
+    def _runLoadSong(self, args):
+        # These args need to be case sensitive
+        # Remove all existing mp3s in the file
+        for f in filter(lambda x: ".mp3" in x, os.listdir()):
+            os.remove(f)
+
+        # Make sure name is valid
+        name = args[1]
+        regex = re.compile('[@_!#$%^&*()<>?/\|}{~: .-]')
+        if regex.search(name) is not None:
+            raise Exception("Invald name")
+
+        link = args[0]
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '320',
+            }],
+        }
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([link])
+
+        # Move mp3 to proper location with correct name
+        f = list(filter(lambda x: ".mp3" in x, os.listdir()))[0]
+        dest = os.path.join(os.environ["MUSIC_PATH"], name + ".mp3")
+        os.rename(f, dest)
+        print(f"File moved to {dest}")
+        return True
+
     """
     Handle message function is the primary interface used by external
     applications
@@ -88,38 +129,42 @@ class LightCommander:
     def handleMessage(self, msg):
         try:
             status = False
-            args = msg.lower().split(" ")
+            args = msg.split(" ")
             cmds = {"reading-light": self._runReadingLight,
                     "strip-light": self._runStripLighting,
                     "play-song": self._runMusic,
+                    "load-song": self._runLoadSong,
                     "kill": lambda _: self._stopMP()}
             """
             Special commands
             """
+            cmd = args[0].lower()
             special_commands = ['ls-songs', 'ls-generators']
-            if args[0] == "ls":
+            if cmd == "ls":
                 return f"Available commands: {list(cmds.keys()) + special_commands}\n"
-            if args[0] == "ls-songs":
+            if cmd == "ls-songs":
                 return f"Available songs: {self._getSongs()}\n"
-            if args[0] == "ls-generators":
+            if cmd == "ls-generators":
                 return f"Available generators: {self._getGenerators()}\n"
 
             """
             General commands
             """
-            if args[0] in cmds.keys():
-                status = cmds[args[0]](args[1:])
+            if cmd in cmds.keys():
+                status = cmds[cmd](args[1:])
 
             return f"Executed {msg} with status {('SUCCESS' if status else 'ERROR')}\n"
         except Exception as e:
             return f"Failed with exception: {e}\n"
 
 def main():
-    lc = LightCommander()
+    # lc = LightCommander()
+    # print(lc.handleMessage("load-song https://www.youtube.com/watch?v=hkNl3pq1twE IWouldDie4U"))
+    # time.sleep(100)
     print(lc.handleMessage("ls-songs"))
     print(lc.handleMessage("play-song TheCranberriesDreams"))
     time.sleep(50)
-    print(lc.handleMessage("kill"))
+    # print(lc.handleMessage("kill"))
     # print(lc.handleMessage("ls"))
     # print(lc.handleMessage("reading-light"))
     # time.sleep(5)

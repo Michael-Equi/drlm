@@ -37,3 +37,4 @@ urllib3==1.26.6
 vonage==2.5.5
 Werkzeug==2.0.2
 wrapt==1.13.3
+youtube-dl==2021.12.17

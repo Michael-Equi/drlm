@@ -14,7 +14,7 @@ class DrlmCoreConfig:
     host: str = 'localhost'
     port: int = 5555
     header_length: int = 10
-    num_leds: int = 288
+    num_leds: int = 576
     buffer_size: int = 4096
 
 
@@ -96,7 +96,7 @@ class DrlmCore:
 
 
 if __name__ == "__main__":
-    controller = DrlmHardwareController(port='/dev/cu.usbmodem86998501', num_leds=288)
+    controller = DrlmHardwareController(port='/dev/cu.usbmodem86998501', num_leds=576)
     cfg = DrlmCoreConfig()
     drlm_core = DrlmCore(controller, cfg)
     drlm_core.run()

@@ -1,6 +1,7 @@
 import time
 import vonage
 from flask import Flask, request
+import os
 
 from LightCommander import LightCommander
 
@@ -8,12 +9,11 @@ from LightCommander import LightCommander
 
 app = Flask(__name__)
 
-# Make these secrets env variables before pushing onto git
-client = vonage.Client(key="e0fd3a2a", secret="jLZHKTQdYA4rjcGa")
+client = vonage.Client(key=os.environ.get('VONAGE_KEY'), secret=os.environ.get('VONAGE_SECRET'))
 sms = vonage.Sms(client)
 
-# Need to run `ngrok http 8840 --host-header="localhost:8840"`
-# Include something like `http://efc2-169-229-22-180.ngrok.io/webhooks/inbound-sms`
+# Need to run `ngrok http 3000 --host-header="localhost:3000"`
+# Include something like `https://34be-169-229-22-180.ngrok.io/webhooks/inbound-sms`
 # to https://dashboard.nexmo.com/settings under `Inbound SMS webhooks`
 
 lc = LightCommander()
@@ -35,19 +35,5 @@ def inbound_sms():
         print(f"Message failed with error: {responseData['messages'][0]['error-text']}")
     return ('', 204)
 
-app.run(port=8840)
-
-
-# if responseData["messages"][0]["status"] == "0":
-#     print("Message sent successfully.")
-# else:
-#     print(f"Message failed with error: {responseData['messages'][0]['error-text']}")
-
-# from drlm_app.drlm_app import DrlmApp
-# from drlm_common.datatypes import Color
-# from SolidColorApp import SolidColor
-#
-# if __name__ == "__main__":
-#     app = SolidColor(Color.from_rgb(15, 7, 1), ranges = [(150, 250)])
-#     app.run()
-#     app.close()
+if __name__ == '__main__':
+    app.run(port=3000)

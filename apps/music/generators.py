@@ -50,7 +50,7 @@ class RGBGenerator(Generator):
 
 
 class PulseGenerator(Generator):
-    def __init__(self, num_leds, D, sr, curve=3):
+    def __init__(self, num_leds, D, sr, curve=2):
         super(PulseGenerator, self).__init__(num_leds, D, sr)
         self.curve = curve
         self.bass = utils.clip_and_normalize(utils.accumulate_range(self.D, 60, 250))
@@ -73,6 +73,40 @@ class PulseGenerator(Generator):
         self.arr[0] = v
 
         return self.arr
+
+
+class CenteredPulseGenerator(Generator):
+    def __init__(self, num_leds, D, sr, center=0.5, curve=2):
+        assert 0 < center < 1
+        super(CenteredPulseGenerator, self).__init__(num_leds, D, sr)
+        self.curve = curve
+        self.bass = utils.clip_and_normalize(utils.accumulate_range(self.D, 60, 250))
+        self.midrange = utils.clip_and_normalize(utils.accumulate_range(self.D, 500, 2000))
+        self.presence = utils.clip_and_normalize(utils.accumulate_range(self.D, 4000, 6000))
+
+        center = int(center * num_leds)
+        assert 1 < center < num_leds - 1
+        self.arr_left = np.zeros(center, dtype=np.int32)
+        self.arr_right = np.zeros(self.num_pixels - center, dtype=np.int32)
+
+    def sample(self, t):
+        i = utils.time_to_bin(t, self.D, self.sr)
+        # Base
+        R = int(255 * self.bass[i] ** self.curve)
+        # Midrange
+        G = int(255 * self.midrange[i] ** self.curve)
+        # Presence
+        B = int(255 * self.presence[i] ** self.curve)
+
+        v = Color.from_rgb(R, G, B).get_hex()
+
+        self.arr_left = np.roll(self.arr_left, 1)
+        self.arr_left[0] = v
+
+        self.arr_right = np.roll(self.arr_right, 1)
+        self.arr_right[0] = v
+
+        return np.concatenate((np.flip(self.arr_left), self.arr_right))
 
 
 class WaveGenerator(Generator):

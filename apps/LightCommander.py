@@ -102,6 +102,9 @@ class LightCommander:
         regex = re.compile('[@_!#$%^&*()<>?/\|}{~: .-]')
         if regex.search(name) is not None:
             raise Exception("Invald name")
+        dest = os.path.join(os.environ["MUSIC_PATH"], name + ".mp3")
+        if os.path.exists(dest):
+            raise Exception("Song file already exists")
 
         link = args[0]
         ydl_opts = {
@@ -117,7 +120,6 @@ class LightCommander:
 
         # Move mp3 to proper location with correct name
         f = list(filter(lambda x: ".mp3" in x, os.listdir()))[0]
-        dest = os.path.join(os.environ["MUSIC_PATH"], name + ".mp3")
         os.rename(f, dest)
         print(f"File moved to {dest}")
         return True
